@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Counter with Firebase</title>
+</head>
+<body>
+    <h1>Welcome to My Page</h1>
+    <p>You are visitor number: <span id="visitorCount">Loading...</span></p>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+
+    <script>
+        // Import the functions you need from the SDKs you need
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyCe86NkQI1UaPK0pr0XqpvbBUBybTQkOQ0",
+            authDomain: "count-3ce26.firebaseapp.com",
+            projectId: "count-3ce26",
+            storageBucket: "count-3ce26.appspot.com",
+            messagingSenderId: "60996349215",
+            appId: "1:60996349215:web:395dc0692334342670142a",
+            measurementId: "G-2QFCDW8HNW"
+        };
+
+        // Firebase 초기화
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 방문자 카운터 업데이트 함수
+        async function updateVisitorCount() {
+            const counterRef = db.collection('counters').doc('visitorCount');
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(counterRef);
+                    if (!doc.exists) {
+                        // 방문자 카운터 생성
+                        transaction.set(counterRef, { count: 1 });
+                        document.getElementById('visitorCount').innerText = 1;
+                    } else {
+                        // 기존 카운터 값 가져오기
+                        const newCount = doc.data().count + 1;
+                        transaction.update(counterRef, { count: newCount });
+                        document.getElementById('visitorCount').innerText = newCount;
+                    }
+                });
+            } catch (e) {
+                console.error("Transaction failed: ", e);
+                document.getElementById('visitorCount').innerText = 'Error';
+            }
+        }
+
+        // 페이지 로드 시 방문자 카운터 업데이트
+        window.onload = function() {
+            updateVisitorCount();
+        };
+    </script>
+</body>
+</html>
