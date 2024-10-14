@@ -10,12 +10,13 @@
     <p>You are visitor number: <span id="visitorCount">Loading...</span></p>
 
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+    <script type="module">
+        // Import the functions you need from the SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
+        import { getFirestore, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-    <script>
-        // Import the functions you need from the SDKs you need
-        // Firebase 설정
+        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCe86NkQI1UaPK0pr0XqpvbBUBybTQkOQ0",
             authDomain: "count-3ce26.firebaseapp.com",
@@ -26,23 +27,24 @@
             measurementId: "G-2QFCDW8HNW"
         };
 
-        // Firebase 초기화
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
 
         // 방문자 카운터 업데이트 함수
         async function updateVisitorCount() {
-            const counterRef = db.collection('counters').doc('visitorCount');
+            const counterRef = doc(db, 'counters', 'visitorCount');
             try {
-                await db.runTransaction(async (transaction) => {
-                    const doc = await transaction.get(counterRef);
-                    if (!doc.exists) {
+                await runTransaction(db, async (transaction) => {
+                    const docSnap = await transaction.get(counterRef);
+                    if (!docSnap.exists()) {
                         // 방문자 카운터 생성
                         transaction.set(counterRef, { count: 1 });
                         document.getElementById('visitorCount').innerText = 1;
                     } else {
                         // 기존 카운터 값 가져오기
-                        const newCount = doc.data().count + 1;
+                        const newCount = docSnap.data().count + 1;
                         transaction.update(counterRef, { count: newCount });
                         document.getElementById('visitorCount').innerText = newCount;
                     }
