@@ -96,6 +96,10 @@
             color: #555;
             font-size: 0.9em;
         }
+
+        #voteChart {
+            margin-top: 20px;
+        }
     </style>
 </head>
 
@@ -119,9 +123,11 @@
         <div class="already-voted-msg" id="alreadyVotedMsg" style="display:none;">
             이미 투표하셨습니다. 감사합니다.
         </div>
+        <canvas id="voteChart" width="300" height="300"></canvas>
     </div>
 
     <!-- Firebase SDKs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module">
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -151,6 +157,22 @@
 
         const pollRef = doc(db, 'votes', 'impeachmentPoll');
 
+        const ctx = document.getElementById('voteChart').getContext('2d');
+        const voteChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['찬성', '반대'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: ['#007aff', '#ff3b30']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
         // Load initial vote counts
         async function loadCounts() {
             try {
@@ -161,10 +183,12 @@
                         transaction.set(pollRef, { agree: 0, disagree: 0 });
                         agreeCountElem.textContent = 0;
                         disagreeCountElem.textContent = 0;
+                        updateChart(0, 0);
                     } else {
                         const data = docSnap.data();
                         agreeCountElem.textContent = data.agree;
                         disagreeCountElem.textContent = data.disagree;
+                        updateChart(data.agree, data.disagree);
                     }
                 });
             } catch (e) {
@@ -182,9 +206,11 @@
                     const docSnap = await transaction.get(pollRef);
                     if (!docSnap.exists()) {
                         transaction.set(pollRef, { agree: 1, disagree: 0 });
+                        updateChart(1, 0);
                     } else {
                         const newAgree = docSnap.data().agree + 1;
                         transaction.update(pollRef, { agree: newAgree });
+                        updateChart(newAgree, docSnap.data().disagree);
                     }
                 });
                 afterVote();
@@ -201,9 +227,11 @@
                     const docSnap = await transaction.get(pollRef);
                     if (!docSnap.exists()) {
                         transaction.set(pollRef, { agree: 0, disagree: 1 });
+                        updateChart(0, 1);
                     } else {
                         const newDisagree = docSnap.data().disagree + 1;
                         transaction.update(pollRef, { disagree: newDisagree });
+                        updateChart(docSnap.data().agree, newDisagree);
                     }
                 });
                 afterVote();
@@ -212,36 +240,17 @@
             }
         }
 
-        // Check if user can vote
-        function canVote() {
-            if (localStorage.getItem('hasVoted') === 'true') {
-                return false;
-            }
-            return true;
-        }
+        // Check if user can
+// Page load initialization
+window.onload = function () {
+    loadCounts();
+    if (localStorage.getItem('hasVoted') === 'true') {
+        agreeBtn.disabled = true;
+        disagreeBtn.disabled = true;
+        alreadyVotedMsg.style.display = 'block';
+    }
+};
 
-        // After vote processing
-        function afterVote() {
-            localStorage.setItem('hasVoted', 'true');
-            agreeBtn.disabled = true;
-            disagreeBtn.disabled = true;
-            alreadyVotedMsg.style.display = 'block';
-        }
-
-        // Page load initialization
-        window.onload = function () {
-            loadCounts();
-            if (localStorage.getItem('hasVoted') === 'true') {
-                agreeBtn.disabled = true;
-                disagreeBtn.disabled = true;
-                alreadyVotedMsg.style.display = 'block';
-            }
-        };
-
-        // Event listeners
-        agreeBtn.addEventListener('click', updateAgree);
-        disagreeBtn.addEventListener('click', updateDisagree);
-    </script>
-</body>
-
-</html>
+// Event listeners
+agreeBtn.addEventListener('click', updateAgree);
+disagreeBtn.addEventListener('click', updateDisagree);
