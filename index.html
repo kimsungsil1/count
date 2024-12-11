@@ -3,8 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>윤석열 대통령 탄핵 국민투표</title>
     <style>
         body {
@@ -92,26 +91,6 @@
             font-size: 1.2em;
         }
 
-        /* 반응형 디자인 */
-        @media (max-width: 400px) {
-            h1 {
-                font-size: 1.2em;
-            }
-
-            .vote-btn {
-                font-size: 0.9em;
-                padding: 0.5em 0.8em;
-            }
-
-            .count-label {
-                font-size: 0.9em;
-            }
-
-            .count-value {
-                font-size: 1.1em;
-            }
-        }
-
         .already-voted-msg {
             margin-top: 1em;
             color: #555;
@@ -144,24 +123,26 @@
 
     <!-- Firebase SDKs -->
     <script type="module">
+        // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
         import { getFirestore, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
+        // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID",
-            measurementId: "YOUR_MEASUREMENT_ID"
+            apiKey: "AIzaSyCe86NkQI1UaPK0pr0XqpvbBUBybTQkOQ0",
+            authDomain: "count-3ce26.firebaseapp.com",
+            projectId: "count-3ce26",
+            storageBucket: "count-3ce26.appspot.com",
+            messagingSenderId: "60996349215",
+            appId: "1:60996349215:web:395dc0692334342670142a",
+            measurementId: "G-2QFCDW8HNW"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
+        // DOM Elements
         const agreeCountElem = document.getElementById('agreeCount');
         const disagreeCountElem = document.getElementById('disagreeCount');
         const agreeBtn = document.getElementById('agreeBtn');
@@ -170,8 +151,10 @@
 
         const pollRef = doc(db, 'votes', 'impeachmentPoll');
 
+        // Load initial vote counts
         async function loadCounts() {
             try {
+                console.log("Loading counts...");
                 await runTransaction(db, async (transaction) => {
                     const docSnap = await transaction.get(pollRef);
                     if (!docSnap.exists()) {
@@ -185,12 +168,13 @@
                     }
                 });
             } catch (e) {
-                console.error("Transaction failed: ", e);
+                console.error("Error loading counts: ", e);
                 agreeCountElem.textContent = 'Error';
                 disagreeCountElem.textContent = 'Error';
             }
         }
 
+        // Update agree count
         async function updateAgree() {
             if (!canVote()) return;
             try {
@@ -198,19 +182,18 @@
                     const docSnap = await transaction.get(pollRef);
                     if (!docSnap.exists()) {
                         transaction.set(pollRef, { agree: 1, disagree: 0 });
-                        agreeCountElem.textContent = 1;
                     } else {
                         const newAgree = docSnap.data().agree + 1;
                         transaction.update(pollRef, { agree: newAgree });
-                        agreeCountElem.textContent = newAgree;
                     }
                 });
                 afterVote();
             } catch (e) {
-                console.error("Transaction failed: ", e);
+                console.error("Error updating agree count: ", e);
             }
         }
 
+        // Update disagree count
         async function updateDisagree() {
             if (!canVote()) return;
             try {
@@ -218,20 +201,18 @@
                     const docSnap = await transaction.get(pollRef);
                     if (!docSnap.exists()) {
                         transaction.set(pollRef, { agree: 0, disagree: 1 });
-                        disagreeCountElem.textContent = 1;
                     } else {
                         const newDisagree = docSnap.data().disagree + 1;
                         transaction.update(pollRef, { disagree: newDisagree });
-                        disagreeCountElem.textContent = newDisagree;
                     }
                 });
                 afterVote();
             } catch (e) {
-                console.error("Transaction failed: ", e);
+                console.error("Error updating disagree count: ", e);
             }
         }
 
-        // 투표 가능 여부 확인
+        // Check if user can vote
         function canVote() {
             if (localStorage.getItem('hasVoted') === 'true') {
                 return false;
@@ -239,7 +220,7 @@
             return true;
         }
 
-        // 투표 후 처리
+        // After vote processing
         function afterVote() {
             localStorage.setItem('hasVoted', 'true');
             agreeBtn.disabled = true;
@@ -247,7 +228,7 @@
             alreadyVotedMsg.style.display = 'block';
         }
 
-        // 페이지 로드 시 현재 투표 수 불러오기 및 투표 가능 여부 체크
+        // Page load initialization
         window.onload = function () {
             loadCounts();
             if (localStorage.getItem('hasVoted') === 'true') {
@@ -257,6 +238,7 @@
             }
         };
 
+        // Event listeners
         agreeBtn.addEventListener('click', updateAgree);
         disagreeBtn.addEventListener('click', updateDisagree);
     </script>
