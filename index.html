@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to My Page</title>
+    <title>윤석열 대통령 탄핵 국민투표</title>
     <style>
-        /* 잡스의 미니멀리즘 철학 반영 */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
@@ -18,51 +17,98 @@
             background-color: #f4f4f4;
         }
 
-        h1 {
-            font-size: 2.5em;
-            font-weight: 700;
-            margin-bottom: 0.5em;
-            color: #333;
-        }
-
-        p {
-            font-size: 1.25em;
-            color: #555;
-            margin-top: 0;
-        }
-
-        #visitorCount {
-            font-weight: bold;
-            color: #007aff;
-            font-size: 2em;
-            display: inline-block;
-            transition: transform 0.3s ease-in-out;
-        }
-
-        /* 방문자 카운트가 증가할 때 애니메이션 */
-        .count-up {
-            transform: scale(1.2);
-        }
-
         .container {
             text-align: center;
             background: white;
             padding: 2em;
             border-radius: 15px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 1em;
+            color: #333;
+            line-height: 1.4em;
+        }
+
+        p {
+            font-size: 1em;
+            color: #555;
+            margin: 1em 0;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1em;
+        }
+
+        button {
+            font-size: 1em;
+            padding: 0.5em 1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .agree-btn {
+            background-color: #007aff;
+            color: #fff;
+        }
+
+        .disagree-btn {
+            background-color: #ff3b30;
+            color: #fff;
+        }
+
+        .count-container {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .count-label {
+            margin-right: 0.5em;
+            color: #333;
+        }
+
+        .count-value {
+            color: #007aff;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>Welcome to My Page</h1>
-        <p>You are visitor number: <span id="visitorCount">Loading...</span></p>
+        <h1>윤석열 대통령 탄핵 국민투표</h1>
+        <div class="button-container">
+            <button class="agree-btn" id="agreeBtn">찬성</button>
+            <button class="disagree-btn" id="disagreeBtn">반대</button>
+        </div>
+        <div class="count-container">
+            <div>
+                <span class="count-label">찬성:</span>
+                <span class="count-value" id="agreeCount">Loading...</span>
+            </div>
+            <div>
+                <span class="count-label">반대:</span>
+                <span class="count-value" id="disagreeCount">Loading...</span>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
-        // Import the functions you need from the SDKs
+        // Firebase Import
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
         import { getFirestore, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -83,43 +129,82 @@
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
-        // 방문자 카운터 업데이트 함수
-        async function updateVisitorCount() {
-            const counterRef = doc(db, 'counters', 'visitorCount');
+        const agreeCountElem = document.getElementById('agreeCount');
+        const disagreeCountElem = document.getElementById('disagreeCount');
+        const agreeBtn = document.getElementById('agreeBtn');
+        const disagreeBtn = document.getElementById('disagreeBtn');
+
+        const pollRef = doc(db, 'votes', 'impeachmentPoll');
+
+        // 투표 데이터 가져오기
+        async function loadCounts() {
             try {
                 await runTransaction(db, async (transaction) => {
-                    const docSnap = await transaction.get(counterRef);
+                    const docSnap = await transaction.get(pollRef);
                     if (!docSnap.exists()) {
-                        // 방문자 카운터 생성
-                        transaction.set(counterRef, { count: 1 });
-                        animateVisitorCount(1);
+                        // 문서가 없으면 초기값 설정
+                        transaction.set(pollRef, { agree: 0, disagree: 0 });
+                        agreeCountElem.textContent = 0;
+                        disagreeCountElem.textContent = 0;
                     } else {
-                        // 기존 카운터 값 가져오기
-                        const newCount = docSnap.data().count + 1;
-                        transaction.update(counterRef, { count: newCount });
-                        animateVisitorCount(newCount);
+                        const data = docSnap.data();
+                        agreeCountElem.textContent = data.agree;
+                        disagreeCountElem.textContent = data.disagree;
                     }
                 });
             } catch (e) {
                 console.error("Transaction failed: ", e);
-                document.getElementById('visitorCount').innerText = 'Error';
+                agreeCountElem.textContent = 'Error';
+                disagreeCountElem.textContent = 'Error';
             }
         }
 
-        // 방문자 카운트 애니메이션 함수
-        function animateVisitorCount(count) {
-            const visitorCountElement = document.getElementById('visitorCount');
-            visitorCountElement.innerText = count;
-            visitorCountElement.classList.add('count-up');
-            setTimeout(() => {
-                visitorCountElement.classList.remove('count-up');
-            }, 300);
+        // 찬성 업데이트
+        async function updateAgree() {
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const docSnap = await transaction.get(pollRef);
+                    if (!docSnap.exists()) {
+                        transaction.set(pollRef, { agree: 1, disagree: 0 });
+                        agreeCountElem.textContent = 1;
+                    } else {
+                        const newAgree = docSnap.data().agree + 1;
+                        transaction.update(pollRef, { agree: newAgree });
+                        agreeCountElem.textContent = newAgree;
+                    }
+                });
+            } catch (e) {
+                console.error("Transaction failed: ", e);
+            }
         }
 
-        // 페이지 로드 시 방문자 카운터 업데이트
+        // 반대 업데이트
+        async function updateDisagree() {
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const docSnap = await transaction.get(pollRef);
+                    if (!docSnap.exists()) {
+                        transaction.set(pollRef, { agree: 0, disagree: 1 });
+                        disagreeCountElem.textContent = 1;
+                    } else {
+                        const newDisagree = docSnap.data().disagree + 1;
+                        transaction.update(pollRef, { disagree: newDisagree });
+                        disagreeCountElem.textContent = newDisagree;
+                    }
+                });
+            } catch (e) {
+                console.error("Transaction failed: ", e);
+            }
+        }
+
+        // 페이지 로드 시 현재 투표 수 불러오기
         window.onload = function () {
-            updateVisitorCount();
+            loadCounts();
         };
+
+        // 버튼 이벤트 연결
+        agreeBtn.addEventListener('click', updateAgree);
+        disagreeBtn.addEventListener('click', updateDisagree);
     </script>
 </body>
 
