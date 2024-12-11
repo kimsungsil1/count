@@ -184,6 +184,11 @@
         }
 
         async function updateVote(field) {
+            if (localStorage.getItem("hasVoted") === "true") {
+                alert("이미 투표하셨습니다.");
+                return;
+            }
+
             await runTransaction(db, async (transaction) => {
                 const docSnap = await transaction.get(pollRef);
                 const data = docSnap.exists() ? docSnap.data() : { agree: 0, disagree: 0 };
@@ -191,13 +196,17 @@
                 transaction.update(pollRef, data);
                 loadCounts();
             });
+
+            localStorage.setItem("hasVoted", "true");
+            agreeBtn.disabled = true;
+            disagreeBtn.disabled = true;
         }
 
         agreeBtn.addEventListener("click", () => updateVote("agree"));
         disagreeBtn.addEventListener("click", () => updateVote("disagree"));
 
         function startTimer() {
-            const endTime = new Date("2024-12-31T23:59:59");
+            const endTime = new Date("2024-12-25T23:59:59");
             const interval = setInterval(() => {
                 const now = new Date();
                 const remaining = endTime - now;
@@ -218,6 +227,10 @@
         window.onload = () => {
             loadCounts();
             startTimer();
+            if (localStorage.getItem("hasVoted") === "true") {
+                agreeBtn.disabled = true;
+                disagreeBtn.disabled = true;
+            }
         };
     </script>
 </body>
