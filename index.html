@@ -216,10 +216,11 @@
                     disagreeBtn.disabled = true;
                     timerElem.textContent = "투표가 종료되었습니다.";
                 } else {
-                    const hours = Math.floor(remaining / (1000 * 60 * 60));
+                    const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                     const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-                    timerElem.textContent = `투표 종료까지 남은 시간: ${hours}시간 ${minutes}분 ${seconds}초`;
+                    timerElem.textContent = `투표 종료까지 남은 시간: ${days}일 ${hours}시간 ${minutes}분 ${seconds}초`;
                 }
             }, 1000);
         }
