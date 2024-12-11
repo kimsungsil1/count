@@ -81,26 +81,6 @@
             font-size: 1.2em;
         }
 
-        #voteChart {
-            margin: 20px auto;
-        }
-
-        .info-container {
-            margin-top: 1em;
-            text-align: left;
-        }
-
-        .info-container h2 {
-            font-size: 1.2em;
-            margin-bottom: 0.5em;
-        }
-
-        .info-container p {
-            font-size: 0.9em;
-            color: #555;
-            line-height: 1.4;
-        }
-
         .timer {
             font-size: 1em;
             color: #555;
@@ -123,15 +103,9 @@
             <span class="count-label">반대:</span>
             <span class="count-value" id="disagreeCount">Loading...</span>
         </div>
-        <canvas id="voteChart" width="400" height="200"></canvas>
         <p class="timer" id="timer">투표 종료까지 남은 시간: 계산 중...</p>
     </div>
-    <div class="info-container container">
-        <h2>투표 정보</h2>
-        <p>본 투표는 윤석열 대통령 탄핵에 대한 국민 의견을 수렴하기 위해 진행됩니다. 모든 투표 데이터는 Firebase Firestore를 통해 실시간으로 집계되며, 데이터는 익명으로 관리됩니다. 투표 결과는 투표 종료 후 공개됩니다.</p>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
         import { getFirestore, doc, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -156,30 +130,12 @@
         const disagreeBtn = document.getElementById("disagreeBtn");
         const timerElem = document.getElementById("timer");
 
-        const ctx = document.getElementById("voteChart").getContext("2d");
-        const voteChart = new Chart(ctx, {
-            type: "pie",
-            data: {
-                labels: ["찬성", "반대"],
-                datasets: [{
-                    data: [0, 0],
-                    backgroundColor: ["#007aff", "#ff3b30"]
-                }]
-            }
-        });
-
-        function updateChart(data) {
-            voteChart.data.datasets[0].data = [data.agree, data.disagree];
-            voteChart.update();
-        }
-
         async function loadCounts() {
             const docSnap = await getDoc(pollRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 agreeCountElem.textContent = data.agree;
                 disagreeCountElem.textContent = data.disagree;
-                updateChart(data);
             }
         }
 
@@ -189,17 +145,22 @@
                 return;
             }
 
-            await runTransaction(db, async (transaction) => {
-                const docSnap = await transaction.get(pollRef);
-                const data = docSnap.exists() ? docSnap.data() : { agree: 0, disagree: 0 };
-                data[field]++;
-                transaction.update(pollRef, data);
-                loadCounts();
-            });
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const docSnap = await transaction.get(pollRef);
+                    const data = docSnap.data();
+                    data[field] += 1;
+                    transaction.update(pollRef, data);
+                });
 
-            localStorage.setItem("hasVoted", "true");
-            agreeBtn.disabled = true;
-            disagreeBtn.disabled = true;
+                localStorage.setItem("hasVoted", "true");
+                agreeBtn.disabled = true;
+                disagreeBtn.disabled = true;
+                loadCounts();
+            } catch (error) {
+                console.error("Error updating vote:", error);
+                alert("투표 중 문제가 발생했습니다. 다시 시도해 주세요.");
+            }
         }
 
         agreeBtn.addEventListener("click", () => updateVote("agree"));
@@ -207,21 +168,23 @@
 
         function startTimer() {
             const endTime = new Date("2024-12-25T23:59:59");
-            const interval = setInterval(() => {
+            setInterval(() => {
                 const now = new Date();
                 const remaining = endTime - now;
+
                 if (remaining <= 0) {
-                    clearInterval(interval);
                     agreeBtn.disabled = true;
                     disagreeBtn.disabled = true;
                     timerElem.textContent = "투표가 종료되었습니다.";
-                } else {
-                    const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-                    timerElem.textContent = `투표 종료까지 남은 시간: ${days}일 ${hours}시간 ${minutes}분 ${seconds}초`;
+                    return;
                 }
+
+                const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+                timerElem.textContent = `투표 종료까지 남은 시간: ${days}일 ${hours}시간 ${minutes}분 ${seconds}초`;
             }, 1000);
         }
 
