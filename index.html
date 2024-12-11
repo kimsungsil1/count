@@ -15,7 +15,6 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            flex-direction: column;
         }
 
         .container {
@@ -24,9 +23,8 @@
             border-radius: 15px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
             text-align: center;
-            max-width: 500px;
+            max-width: 320px;
             width: 90%;
-            margin-bottom: 2em;
         }
 
         h1 {
@@ -34,6 +32,7 @@
             font-weight: 700;
             color: #333;
             margin-bottom: 1em;
+            line-height: 1.4;
         }
 
         .button-container {
@@ -55,6 +54,10 @@
             box-sizing: border-box;
         }
 
+        .vote-btn:active {
+            transform: translateY(1px);
+        }
+
         .agree-btn {
             background-color: #007aff;
         }
@@ -64,14 +67,21 @@
         }
 
         .count-container {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1em;
+            font-weight: 600;
             margin-top: 1em;
         }
 
+        .count-item {
+            flex: 1;
+            text-align: center;
+        }
+
         .count-label {
-            display: inline-block;
-            margin-right: 10px;
-            font-size: 1em;
-            font-weight: 600;
+            display: block;
+            margin-bottom: 0.5em;
             color: #333;
         }
 
@@ -81,14 +91,10 @@
             font-size: 1.2em;
         }
 
-        #voteChart {
-            margin: 20px auto;
-        }
-
-        .timer {
-            font-size: 1em;
+        .already-voted-msg {
+            margin-top: 1em;
             color: #555;
-            margin-top: 10px;
+            font-size: 0.9em;
         }
     </style>
 </head>
@@ -101,21 +107,27 @@
             <button class="vote-btn disagree-btn" id="disagreeBtn">반대</button>
         </div>
         <div class="count-container">
-            <span class="count-label">찬성:</span>
-            <span class="count-value" id="agreeCount">Loading...</span>
-            <br />
-            <span class="count-label">반대:</span>
-            <span class="count-value" id="disagreeCount">Loading...</span>
+            <div class="count-item">
+                <span class="count-label">찬성:</span>
+                <span class="count-value" id="agreeCount">Loading...</span>
+            </div>
+            <div class="count-item">
+                <span class="count-label">반대:</span>
+                <span class="count-value" id="disagreeCount">Loading...</span>
+            </div>
         </div>
-        <canvas id="voteChart" width="400" height="200"></canvas>
-        <p class="timer" id="timer">투표 종료까지 남은 시간: 계산 중...</p>
+        <div class="already-voted-msg" id="alreadyVotedMsg" style="display:none;">
+            이미 투표하셨습니다. 감사합니다.
+        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDKs -->
     <script type="module">
+        // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+        import { getFirestore, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCe86NkQI1UaPK0pr0XqpvbBUBybTQkOQ0",
             authDomain: "count-3ce26.firebaseapp.com",
@@ -126,104 +138,109 @@
             measurementId: "G-2QFCDW8HNW"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const pollRef = doc(db, "votes", "impeachmentPoll");
 
-        const agreeCountElem = document.getElementById("agreeCount");
-        const disagreeCountElem = document.getElementById("disagreeCount");
-        const agreeBtn = document.getElementById("agreeBtn");
-        const disagreeBtn = document.getElementById("disagreeBtn");
-        const timerElem = document.getElementById("timer");
+        // DOM Elements
+        const agreeCountElem = document.getElementById('agreeCount');
+        const disagreeCountElem = document.getElementById('disagreeCount');
+        const agreeBtn = document.getElementById('agreeBtn');
+        const disagreeBtn = document.getElementById('disagreeBtn');
+        const alreadyVotedMsg = document.getElementById('alreadyVotedMsg');
 
-        const ctx = document.getElementById("voteChart").getContext("2d");
-        const voteChart = new Chart(ctx, {
-            type: "pie",
-            data: {
-                labels: ["찬성", "반대"],
-                datasets: [{
-                    data: [0, 0],
-                    backgroundColor: ["#007aff", "#ff3b30"]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
+        const pollRef = doc(db, 'votes', 'impeachmentPoll');
 
+        // Load initial vote counts
         async function loadCounts() {
-            const docSnap = await getDoc(pollRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                agreeCountElem.textContent = data.agree;
-                disagreeCountElem.textContent = data.disagree;
-                updateChart(data);
+            try {
+                console.log("Loading counts...");
+                await runTransaction(db, async (transaction) => {
+                    const docSnap = await transaction.get(pollRef);
+                    if (!docSnap.exists()) {
+                        transaction.set(pollRef, { agree: 0, disagree: 0 });
+                        agreeCountElem.textContent = 0;
+                        disagreeCountElem.textContent = 0;
+                    } else {
+                        const data = docSnap.data();
+                        agreeCountElem.textContent = data.agree;
+                        disagreeCountElem.textContent = data.disagree;
+                    }
+                });
+            } catch (e) {
+                console.error("Error loading counts: ", e);
+                agreeCountElem.textContent = 'Error';
+                disagreeCountElem.textContent = 'Error';
             }
         }
 
-        async function updateVote(field) {
-            if (localStorage.getItem("hasVoted") === "true") {
-                alert("이미 투표하셨습니다.");
-                return;
-            }
-
+        // Update agree count
+        async function updateAgree() {
+            if (!canVote()) return;
             try {
                 await runTransaction(db, async (transaction) => {
                     const docSnap = await transaction.get(pollRef);
-                    const data = docSnap.data();
-                    data[field] += 1;
-                    transaction.update(pollRef, data);
+                    if (!docSnap.exists()) {
+                        transaction.set(pollRef, { agree: 1, disagree: 0 });
+                    } else {
+                        const newAgree = docSnap.data().agree + 1;
+                        transaction.update(pollRef, { agree: newAgree });
+                    }
                 });
-
-                localStorage.setItem("hasVoted", "true");
-                agreeBtn.disabled = true;
-                disagreeBtn.disabled = true;
-                loadCounts();
-            } catch (error) {
-                console.error("Error updating vote:", error);
-                alert("투표 중 문제가 발생했습니다. 다시 시도해 주세요.");
+                afterVote();
+            } catch (e) {
+                console.error("Error updating agree count: ", e);
             }
         }
 
-        function updateChart(data) {
-            voteChart.data.datasets[0].data = [data.agree, data.disagree];
-            voteChart.update();
+        // Update disagree count
+        async function updateDisagree() {
+            if (!canVote()) return;
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const docSnap = await transaction.get(pollRef);
+                    if (!docSnap.exists()) {
+                        transaction.set(pollRef, { agree: 0, disagree: 1 });
+                    } else {
+                        const newDisagree = docSnap.data().disagree + 1;
+                        transaction.update(pollRef, { disagree: newDisagree });
+                    }
+                });
+                afterVote();
+            } catch (e) {
+                console.error("Error updating disagree count: ", e);
+            }
         }
 
-        agreeBtn.addEventListener("click", () => updateVote("agree"));
-        disagreeBtn.addEventListener("click", () => updateVote("disagree"));
-
-        function startTimer() {
-            const endTime = new Date("2024-12-25T23:59:59");
-            setInterval(() => {
-                const now = new Date();
-                const remaining = endTime - now;
-
-                if (remaining <= 0) {
-                    agreeBtn.disabled = true;
-                    disagreeBtn.disabled = true;
-                    timerElem.textContent = "투표가 종료되었습니다.";
-                    return;
-                }
-
-                const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-
-                timerElem.textContent = `투표 종료까지 남은 시간: ${days}일 ${hours}시간 ${minutes}분 ${seconds}초`;
-            }, 1000);
+        // Check if user can vote
+        function canVote() {
+            if (localStorage.getItem('hasVoted') === 'true') {
+                return false;
+            }
+            return true;
         }
 
-        window.onload = () => {
+        // After vote processing
+        function afterVote() {
+            localStorage.setItem('hasVoted', 'true');
+            agreeBtn.disabled = true;
+            disagreeBtn.disabled = true;
+            alreadyVotedMsg.style.display = 'block';
+        }
+
+        // Page load initialization
+        window.onload = function () {
             loadCounts();
-            startTimer();
-            if (localStorage.getItem("hasVoted") === "true") {
+            if (localStorage.getItem('hasVoted') === 'true') {
                 agreeBtn.disabled = true;
                 disagreeBtn.disabled = true;
+                alreadyVotedMsg.style.display = 'block';
             }
         };
+
+        // Event listeners
+        agreeBtn.addEventListener('click', updateAgree);
+        disagreeBtn.addEventListener('click', updateDisagree);
     </script>
 </body>
 
