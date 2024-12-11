@@ -111,6 +111,12 @@
                 font-size: 1.1em;
             }
         }
+
+        .already-voted-msg {
+            margin-top: 1em;
+            color: #555;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 
@@ -131,6 +137,9 @@
                 <span class="count-value" id="disagreeCount">Loading...</span>
             </div>
         </div>
+        <div class="already-voted-msg" id="alreadyVotedMsg" style="display:none;">
+            이미 투표하셨습니다. 감사합니다.
+        </div>
     </div>
 
     <!-- Firebase SDKs -->
@@ -140,13 +149,13 @@
         import { getFirestore, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyCe86NkQI1UaPK0pr0XqpvbBUBybTQkOQ0",
-            authDomain: "count-3ce26.firebaseapp.com",
-            projectId: "count-3ce26",
-            storageBucket: "count-3ce26.appspot.com",
-            messagingSenderId: "60996349215",
-            appId: "1:60996349215:web:395dc0692334342670142a",
-            measurementId: "G-2QFCDW8HNW"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            measurementId: "YOUR_MEASUREMENT_ID"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -157,6 +166,7 @@
         const disagreeCountElem = document.getElementById('disagreeCount');
         const agreeBtn = document.getElementById('agreeBtn');
         const disagreeBtn = document.getElementById('disagreeBtn');
+        const alreadyVotedMsg = document.getElementById('alreadyVotedMsg');
 
         const pollRef = doc(db, 'votes', 'impeachmentPoll');
 
@@ -182,6 +192,7 @@
         }
 
         async function updateAgree() {
+            if (!canVote()) return;
             try {
                 await runTransaction(db, async (transaction) => {
                     const docSnap = await transaction.get(pollRef);
@@ -194,12 +205,14 @@
                         agreeCountElem.textContent = newAgree;
                     }
                 });
+                afterVote();
             } catch (e) {
                 console.error("Transaction failed: ", e);
             }
         }
 
         async function updateDisagree() {
+            if (!canVote()) return;
             try {
                 await runTransaction(db, async (transaction) => {
                     const docSnap = await transaction.get(pollRef);
@@ -212,13 +225,36 @@
                         disagreeCountElem.textContent = newDisagree;
                     }
                 });
+                afterVote();
             } catch (e) {
                 console.error("Transaction failed: ", e);
             }
         }
 
+        // 투표 가능 여부 확인
+        function canVote() {
+            if (localStorage.getItem('hasVoted') === 'true') {
+                return false;
+            }
+            return true;
+        }
+
+        // 투표 후 처리
+        function afterVote() {
+            localStorage.setItem('hasVoted', 'true');
+            agreeBtn.disabled = true;
+            disagreeBtn.disabled = true;
+            alreadyVotedMsg.style.display = 'block';
+        }
+
+        // 페이지 로드 시 현재 투표 수 불러오기 및 투표 가능 여부 체크
         window.onload = function () {
             loadCounts();
+            if (localStorage.getItem('hasVoted') === 'true') {
+                agreeBtn.disabled = true;
+                disagreeBtn.disabled = true;
+                alreadyVotedMsg.style.display = 'block';
+            }
         };
 
         agreeBtn.addEventListener('click', updateAgree);
