@@ -32,36 +32,73 @@
     transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
     box-sizing: border-box;
     overflow: hidden;
-  }
-
-  /* 룰렛 내부를 4등분하기 위해 각도별로 다른 색상을 가진 원형 파이 형태 생성 */
-  /* 간단히 background: conic-gradient를 이용해 구현할 수도 있음 */
-  #wheel {
     background: conic-gradient(
-      #ff6666 0deg 90deg,     /* 1등 구간 */
-      #66b3ff 90deg 180deg,   /* 2등 구간 */
-      #66ff66 180deg 270deg,  /* 3등 구간 */
-      #ffc266 270deg 360deg   /* 4등 구간 */
+      #ff6666 0deg 90deg,     /* 1등 구간: 0~90도 */
+      #66b3ff 90deg 180deg,   /* 2등 구간: 90~180도 */
+      #66ff66 180deg 270deg,  /* 3등 구간: 180~270도 */
+      #ffc266 270deg 360deg   /* 4등 구간: 270~360도 */
     );
   }
 
-  /* 포인터(화살표) */
+  /* 각 상품명을 표시하는 레이블 */
+  .label {
+    position: absolute;
+    width: 80px;
+    text-align: center;
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #000;
+    background: rgba(255,255,255,0.8);
+    border-radius: 5px;
+    padding: 3px;
+  }
+
+  /* 1등 영역(0~90도): 상단 중앙에 위치 */
+  .label1 {
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* 2등 영역(90~180도): 오른쪽 중앙에 위치 */
+  .label2 {
+    top: 50%;
+    right: 10%;
+    transform: translateY(-50%);
+  }
+
+  /* 3등 영역(180~270도): 하단 중앙에 위치 */
+  .label3 {
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* 4등 영역(270~360도): 왼쪽 중앙에 위치 */
+  .label4 {
+    top: 50%;
+    left: 10%;
+    transform: translateY(-50%);
+  }
+
+  /* 포인터(위쪽에서 룰렛을 향해 내려오는 삼각형) */
   #pointer {
     position: absolute;
-    top: -20px;
+    top: 0px;
     left: 50%;
     transform: translateX(-50%);
     width: 0; 
     height: 0; 
     border-left: 15px solid transparent;
     border-right: 15px solid transparent;
-    border-bottom: 20px solid #333;
+    border-top: 20px solid #333; /* 위에서 아래로 향하는 화살표 */
   }
 
   button {
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
+    margin-top: 20px;
   }
 
   #result {
@@ -70,6 +107,7 @@
     font-weight: bold;
     color: #333;
   }
+
 </style>
 </head>
 <body>
@@ -77,7 +115,12 @@
 <p>1등: 100권 시술권, 2등: 50만원 시술권, 3등: 1회 시술권, 4등: 최고급마스크팩</p>
 <div id="roulette-container">
   <div id="pointer"></div>
-  <div id="wheel"></div>
+  <div id="wheel">
+    <div class="label label1">100권 시술권</div>
+    <div class="label label2">50만원 시술권</div>
+    <div class="label label3">1회 시술권</div>
+    <div class="label label4">최고급마스크팩</div>
+  </div>
 </div>
 <button id="spinBtn">룰렛 돌리기</button>
 <div id="result"></div>
@@ -90,11 +133,11 @@
   let isSpinning = false;
   
   spinBtn.addEventListener('click', () => {
-    if (isSpinning) return; // 회전 중 중복 클릭 방지
+    if (isSpinning) return; // 회전 중이라면 클릭 무시
     isSpinning = true;
     resultDiv.textContent = '';
 
-    // 총 회전 각도 = (360 * 5회전 정도) + 랜덤(0 ~ 360)
+    // 총 회전 각도 = (360도 * 5바퀴) + 랜덤(0 ~ 360)
     const extraSpins = 5; 
     const randomAngle = Math.floor(Math.random() * 360);
     const targetAngle = (360 * extraSpins) + randomAngle;
@@ -118,10 +161,6 @@
       }
 
       resultDiv.textContent = `당첨! 축하합니다. 당신의 당첨 상품: ${prize}`;
-
-      // 다음 회전을 위해 transition 초기화 및 상태 리셋
-      // 다음 회전 시 다시 transition을 적용하기 위해 약간의 트릭이 필요할 수 있으나
-      // 여기선 간단히 isSpinning을 리셋해주기만 하면 됨.
       isSpinning = false;
     }, {once:true});
   });
