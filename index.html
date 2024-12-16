@@ -11,25 +11,64 @@
     background: #f9f9f9;
     padding: 20px;
   }
+  h1 {
+    font-size: 2em;
+    margin-bottom: 10px;
+  }
+
   #roulette-container {
     margin: 50px auto;
+    position: relative;
+    width: 300px;
+    height: 300px;
   }
+
+  #wheel {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    position: relative;
+    border: 5px solid #333;
+    transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  /* 룰렛 내부를 4등분하기 위해 각도별로 다른 색상을 가진 원형 파이 형태 생성 */
+  /* 간단히 background: conic-gradient를 이용해 구현할 수도 있음 */
+  #wheel {
+    background: conic-gradient(
+      #ff6666 0deg 90deg,     /* 1등 구간 */
+      #66b3ff 90deg 180deg,   /* 2등 구간 */
+      #66ff66 180deg 270deg,  /* 3등 구간 */
+      #ffc266 270deg 360deg   /* 4등 구간 */
+    );
+  }
+
+  /* 포인터(화살표) */
+  #pointer {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; 
+    height: 0; 
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 20px solid #333;
+  }
+
   button {
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
   }
+
   #result {
     margin-top: 20px;
-    font-size: 20px;
+    font-size: 1.2em;
     font-weight: bold;
     color: #333;
-  }
-  #coupon {
-    margin-top: 10px;
-    font-size: 18px;
-    color: #0044cc;
-    word-break: break-all;
   }
 </style>
 </head>
@@ -37,115 +76,54 @@
 <h1>룰렛 이벤트</h1>
 <p>1등: 100권 시술권, 2등: 50만원 시술권, 3등: 1회 시술권, 4등: 최고급마스크팩</p>
 <div id="roulette-container">
-  <button id="spinBtn">룰렛 돌리기</button>
+  <div id="pointer"></div>
+  <div id="wheel"></div>
 </div>
+<button id="spinBtn">룰렛 돌리기</button>
 <div id="result"></div>
-<div id="coupon"></div>
-
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-  // Firebase 초기화
-  const firebaseConfig = {
-    apiKey: "AIzaSyCe86NkQI1UaPK0pr0XqpvbBUBybTQkOQ0",
-    authDomain: "count-3ce26.firebaseapp.com",
-    projectId: "count-3ce26",
-    storageBucket: "count-3ce26.appspot.com",
-    messagingSenderId: "60996349215",
-    appId: "1:60996349215:web:395dc0692334342670142a",
-    measurementId: "G-2QFCDW8HNW"
-  };
+  const wheel = document.getElementById('wheel');
+  const resultDiv = document.getElementById('result');
+  const spinBtn = document.getElementById('spinBtn');
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-
-  // 사용자 식별을 위한 임시 userId (실 서비스에서는 로그인 기능 사용 권장)
-  let userId = localStorage.getItem('userId');
-  if (!userId) {
-    userId = 'user_' + Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('userId', userId);
-  }
-
-  // 하루 1회 참여 제한을 위해 Firestore에 기록하는 함수
-  async function hasPlayedToday() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const dayKey = `${yyyy}-${mm}-${dd}`;
-
-    const docRef = db.collection('roulette').doc(userId);
-    const docSnap = await docRef.get();
-    if (docSnap.exists) {
-      const data = docSnap.data();
-      if (data.lastPlay === dayKey) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  async function recordPlay(resultPrize, couponCode) {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const dayKey = `${yyyy}-${mm}-${dd}`;
-
-    await db.collection('roulette').doc(userId).set({
-      lastPlay: dayKey,
-      prize: resultPrize,
-      coupon: couponCode
-    }, { merge: true });
-  }
-
-  function getRandomPrize() {
-    // 1등: 100권 시술권
-    // 2등: 50만원 시술권
-    // 3등: 1회 시술권
-    // 4등: 최고급마스크팩
-    // 예: 1등: 5% 확률, 2등: 10% 확률, 3등: 30% 확률, 4등: 55% 확률 식으로 가중치 가능
-    // 여기서는 단순히 4등분
-    const random = Math.random();
-    if (random < 0.05) {
-      return "1등 (100권 시술권)";
-    } else if (random < 0.15) {
-      return "2등 (50만원 시술권)";
-    } else if (random < 0.45) {
-      return "3등 (1회 시술권)";
-    } else {
-      return "4등 (최고급마스크팩)";
-    }
-  }
-
-  function generateCouponCode() {
-    return 'COUPON-' + Math.random().toString(36).substring(2, 12).toUpperCase();
-  }
-
-  document.getElementById('spinBtn').addEventListener('click', async () => {
-    const resultDiv = document.getElementById('result');
-    const couponDiv = document.getElementById('coupon');
+  let isSpinning = false;
+  
+  spinBtn.addEventListener('click', () => {
+    if (isSpinning) return; // 회전 중 중복 클릭 방지
+    isSpinning = true;
     resultDiv.textContent = '';
-    couponDiv.textContent = '';
 
-    // 하루 1회 참여여부 확인
-    const playedToday = await hasPlayedToday();
-    if (playedToday) {
-      resultDiv.textContent = '오늘은 이미 참여하셨습니다. 내일 다시 참여해주세요!';
-      return;
-    }
+    // 총 회전 각도 = (360 * 5회전 정도) + 랜덤(0 ~ 360)
+    const extraSpins = 5; 
+    const randomAngle = Math.floor(Math.random() * 360);
+    const targetAngle = (360 * extraSpins) + randomAngle;
 
-    // 룰렛(난수) 돌리기
-    const prize = getRandomPrize();
-    const couponCode = generateCouponCode();
+    // 회전 시작
+    wheel.style.transform = `rotate(${targetAngle}deg)`;
 
-    // Firestore에 기록
-    await recordPlay(prize, couponCode);
+    wheel.addEventListener('transitionend', () => {
+      // 최종 각도 계산
+      const finalAngle = targetAngle % 360;
 
-    resultDiv.textContent = `당첨! 축하합니다. 당신의 당첨 상품: ${prize}`;
-    couponDiv.textContent = `당첨권 코드: ${couponCode}\n해당 코드를 샵에 방문하여 제시해주세요.`;
+      let prize;
+      if (finalAngle >= 0 && finalAngle < 90) {
+        prize = "1등 (100권 시술권)";
+      } else if (finalAngle >= 90 && finalAngle < 180) {
+        prize = "2등 (50만원 시술권)";
+      } else if (finalAngle >= 180 && finalAngle < 270) {
+        prize = "3등 (1회 시술권)";
+      } else {
+        prize = "4등 (최고급마스크팩)";
+      }
+
+      resultDiv.textContent = `당첨! 축하합니다. 당신의 당첨 상품: ${prize}`;
+
+      // 다음 회전을 위해 transition 초기화 및 상태 리셋
+      // 다음 회전 시 다시 transition을 적용하기 위해 약간의 트릭이 필요할 수 있으나
+      // 여기선 간단히 isSpinning을 리셋해주기만 하면 됨.
+      isSpinning = false;
+    }, {once:true});
   });
 </script>
 </body>
