@@ -19,13 +19,6 @@
     text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
   }
 
-  #brand {
-    margin-bottom: 10px;
-    font-weight: bold;
-    color: #fff;
-    text-shadow: 1px 1px 2px #333;
-  }
-
   #roulette-container {
     margin: 20px auto;
     position: relative;
@@ -44,33 +37,62 @@
     transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
     box-sizing: border-box;
     overflow: hidden;
+    /* 확률에 따른 각도 설정:
+       1등: 0~18도(5%)
+       2등: 18~72도(15%)
+       3등: 72~180도(30%)
+       4등: 180~360도(50%)
+    */
     background: conic-gradient(
-      #ff6666 0deg 90deg,     /* 1등: 100권 시술권 */
-      #66b3ff 90deg 180deg,   /* 2등: 50만원 시술권 */
-      #66ff66 180deg 270deg,  /* 3등: 1회 시술권 */
-      #ffc266 270deg 360deg   /* 4등: 최고급마스크팩 */
+      #ff6666 0deg 18deg,        /* 1등: 100권 시술권 (5%) */
+      #66b3ff 18deg 72deg,       /* 2등: 50만원 시술권 (15%) */
+      #66ff66 72deg 180deg,      /* 3등: 1회 시술권 (30%) */
+      #ffc266 180deg 360deg      /* 4등: 최고급 마스크팩 (50%) */
     );
     box-shadow: 0 0 20px rgba(0,0,0,0.4), inset 0 0 50px rgba(255,255,255,0.3);
   }
 
-  /* 상품명 레이블 */
+  /* 상품명을 중심에서 바깥으로 배치하기 위해
+     wheel의 가운데에 컨테이너를 두고 각 상품명을 rotate/translate */
+  .label-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%,-50%);
+    width: 0; height: 0;
+  }
+
   .label {
     position: absolute;
-    width: 90px;
+    width: 100px;
     text-align: center;
     font-size: 0.9em;
     font-weight: bold;
     color: #000;
     background: rgba(255,255,255,0.8);
     border-radius: 5px;
-    padding: 3px;
+    padding: 5px;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
   }
 
-  .label1 { top: 10%; left: 50%; transform: translateX(-50%); }
-  .label2 { top: 50%; right: 5%; transform: translateY(-50%); }
-  .label3 { bottom: 10%; left: 50%; transform: translateX(-50%); }
-  .label4 { top: 50%; left: 5%; transform: translateY(-50%); }
+  /* 각 구역의 중앙 각도를 기준으로 라벨 배치:
+     1등: 0°~18°, 중앙 ~9°
+     2등: 18°~72°, 중앙 ~45°
+     3등: 72°~180°, 중앙 ~126°
+     4등: 180°~360°, 중앙 ~270°
+   */
+  .label1 {
+    transform: rotate(9deg) translate(100px) rotate(-9deg);
+  }
+  .label2 {
+    transform: rotate(45deg) translate(100px) rotate(-45deg);
+  }
+  .label3 {
+    transform: rotate(126deg) translate(100px) rotate(-126deg);
+  }
+  .label4 {
+    transform: rotate(270deg) translate(100px) rotate(-270deg);
+  }
 
   /* 포인터 */
   #pointer {
@@ -86,7 +108,6 @@
     z-index: 2;
   }
 
-  /* 스핀 버튼 */
   #spinBtn {
     padding: 10px 20px;
     font-size: 16px;
@@ -113,118 +134,49 @@
     border-radius: 5px;
   }
 
-  #coupon-area {
-    margin-top: 10px;
-  }
-  #coupon-code {
-    font-weight: bold;
-    color: #0044cc;
-  }
-
-  .qr {
-    margin-top: 10px;
-    display: inline-block;
-  }
-
-  /* 스파클 효과 (당첨시) */
-  @keyframes sparkle {
-    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
-    50% { opacity: 0.3; transform: translate(-50%, -50%) scale(1.5); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
-  }
-  .sparkle {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: gold;
-    border-radius: 50%;
-    animation: sparkle 1s forwards;
-  }
-
-  /* 반응형 */
-  @media (max-width: 500px) {
-    h1 { font-size: 1.5em; }
-    .label { font-size: 0.8em; width: 70px; }
-  }
-
   #info {
     margin-top: 10px;
     font-size: 0.9em;
     color: #fff;
     text-shadow: 1px 1px 2px #000;
   }
-
-  #shareBtn {
-    margin-top: 10px;
-    display: inline-block;
-    background: #1DA1F2;
-    color: #fff;
-    padding: 8px 15px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 0.9em;
-  }
-  #shareBtn:hover {
-    background: #0d8dda;
-  }
-
 </style>
 </head>
 <body>
-<div id="brand">[브랜드 로고 자리]</div>
 <h1>룰렛 이벤트</h1>
 <p>1등: 100권 시술권, 2등: 50만원 시술권, 3등: 1회 시술권, 4등: 최고급마스크팩</p>
 
 <div id="roulette-container">
   <div id="pointer"></div>
   <div id="wheel">
-    <div class="label label1">100권 시술권</div>
-    <div class="label label2">50만원 시술권</div>
-    <div class="label label3">1회 시술권</div>
-    <div class="label label4">최고급 마스크팩</div>
+    <div class="label-container">
+      <div class="label label1">100권 시술권</div>
+      <div class="label label2">50만원 시술권</div>
+      <div class="label label3">1회 시술권</div>
+      <div class="label label4">최고급마스크팩</div>
+    </div>
   </div>
 </div>
 
 <button id="spinBtn">룰렛 돌리기</button>
 <div id="result"></div>
-<div id="coupon-area" style="display:none;">
-  <div>당첨권 코드: <span id="coupon-code"></span></div>
-  <div>해당 코드를 샵에 방문하여 제시해주세요.</div>
-  <img class="qr" src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Qr-code-wikipedia.svg/120px-Qr-code-wikipedia.svg.png" alt="QR Code">
-  <div>
-    <a id="shareBtn" href="#" target="_blank">결과 공유하기</a>
-  </div>
-</div>
-
 <div id="info"></div>
-
-<!-- 사운드 파일 (데모용으로 온라인 링크나 data URI 사용 가능) -->
-<audio id="spinSound" src="https://actions.google.com/sounds/v1/sports/spin_wheel.ogg"></audio>
-<audio id="winSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 
 <script>
   const wheel = document.getElementById('wheel');
   const resultDiv = document.getElementById('result');
   const spinBtn = document.getElementById('spinBtn');
   const infoDiv = document.getElementById('info');
-  const couponArea = document.getElementById('coupon-area');
-  const couponCodeSpan = document.getElementById('coupon-code');
-  const shareBtn = document.getElementById('shareBtn');
-
-  const spinSound = document.getElementById('spinSound');
-  const winSound = document.getElementById('winSound');
 
   let isSpinning = false;
 
-  // 하루 1회 제한 로직 (단순 로컬스토리지)
+  // 하루 1회 제한(데모용)
   const STORAGE_KEY = 'lastPlayDate';
   const today = new Date().toLocaleDateString();
-
   function canPlayToday() {
     const lastPlay = localStorage.getItem(STORAGE_KEY);
     return lastPlay !== today;
   }
-
   function recordPlay() {
     localStorage.setItem(STORAGE_KEY, today);
   }
@@ -240,7 +192,6 @@
       spinBtn.style.background = '#333';
     }
   }
-
   updateInfo();
 
   spinBtn.addEventListener('click', () => {
@@ -249,64 +200,38 @@
 
     isSpinning = true;
     resultDiv.textContent = '';
-    couponArea.style.display = 'none';
-    // 당첨 후 스파클 제거
-    document.querySelectorAll('.sparkle').forEach(el => el.remove());
 
-    // 룰렛 사운드 재생
-    spinSound.currentTime = 0;
-    spinSound.play();
+    // 확률에 따른 당첨 결정
+    // 1등: 5%, 2등: 15%, 3등: 30%, 4등: 50%
+    const r = Math.random();
+    let prize, angleRangeStart, angleRangeEnd;
+    if (r < 0.05) {
+      prize = "1등 (100권 시술권)";
+      angleRangeStart = 0; angleRangeEnd = 18;   // 5% of 360
+    } else if (r < 0.20) {
+      prize = "2등 (50만원 시술권)";
+      angleRangeStart = 18; angleRangeEnd = 72;  // 15% of 360
+    } else if (r < 0.50) {
+      prize = "3등 (1회 시술권)";
+      angleRangeStart = 72; angleRangeEnd = 180; // 30% of 360
+    } else {
+      prize = "4등 (최고급마스크팩)";
+      angleRangeStart = 180; angleRangeEnd = 360; // 50% of 360
+    }
 
-    // 회전 각도 설정
-    const extraSpins = 5; 
-    const randomAngle = Math.floor(Math.random() * 360);
-    const targetAngle = (360 * extraSpins) + randomAngle;
+    // 해당 구간 내에서 무작위 각도 선택
+    const segmentAngle = angleRangeStart + Math.random()*(angleRangeEnd - angleRangeStart);
+
+    // 총 회전 각도 = (360 * 5회전) + segmentAngle
+    const extraSpins = 5;
+    const targetAngle = (360 * extraSpins) + segmentAngle;
 
     wheel.style.transform = `rotate(${targetAngle}deg)`;
 
     wheel.addEventListener('transitionend', () => {
-      const finalAngle = targetAngle % 360;
-      let prize;
-      if (finalAngle >= 0 && finalAngle < 90) {
-        prize = "1등 (100권 시술권)";
-      } else if (finalAngle >= 90 && finalAngle < 180) {
-        prize = "2등 (50만원 시술권)";
-      } else if (finalAngle >= 180 && finalAngle < 270) {
-        prize = "3등 (1회 시술권)";
-      } else {
-        prize = "4등 (최고급마스크팩)";
-      }
-
-      // 당첨 사운드
-      winSound.currentTime = 0;
-      winSound.play();
-
-      // 스파클 효과 연출
-      for (let i=0; i<10; i++){
-        const sparkle = document.createElement('div');
-        sparkle.className = 'sparkle';
-        const x = 50 + Math.random()*40 -20; // 대략 중심 부근
-        const y = 50 + Math.random()*40 -20;
-        sparkle.style.left = x + '%';
-        sparkle.style.top = y + '%';
-        wheel.appendChild(sparkle);
-      }
-
       resultDiv.textContent = `당첨! 축하합니다. 당신의 당첨 상품: ${prize}`;
-
-      // 쿠폰코드 생성 및 표시
-      const couponCode = 'COUPON-' + Math.random().toString(36).substring(2,12).toUpperCase();
-      couponCodeSpan.textContent = couponCode;
-      couponArea.style.display = 'block';
-
-      // SNS 공유 링크
-      const shareText = encodeURIComponent(`룰렛 이벤트에서 "${prize}" 에 당첨되었습니다!`);
-      shareBtn.href = `https://twitter.com/intent/tweet?text=${shareText}`;
-
-      // 하루 1회 참여 기록
       recordPlay();
       updateInfo();
-
       isSpinning = false;
     }, {once:true});
   });
