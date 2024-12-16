@@ -35,7 +35,6 @@
     transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
     box-sizing: border-box;
     overflow: hidden;
-    /* 확률별 구역 배경 */
     background: conic-gradient(
       #ff6666 0deg 18deg,        /* 1등(5%) */
       #66b3ff 18deg 72deg,       /* 2등(15%) */
@@ -53,31 +52,52 @@
     width: 0; height: 0;
   }
 
+  /* 라벨 크기 축소 및 줄 나눔
+     폰트 크기 축소, 폭 축소, 패딩 최소화 */
   .label {
     position: absolute;
-    width: 80px;
+    width: 50px;
     text-align: center;
-    font-size: 0.9em;
+    font-size: 0.8em;
     font-weight: bold;
     color: #000;
     background: rgba(255,255,255,0.9);
-    border-radius: 5px;
-    padding: 5px;
-    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    border-radius: 3px;
+    padding: 2px;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    line-height: 1.1em;
   }
 
-  /* 정확한 각도로 배치한 레이블 - 수평 상태 유지 */
+  /* 각 라벨 위치 재조정 (반지름 약 40px 지점)
+     각도:
+     1등: 9도
+     2등: 45도
+     3등: 126도
+     4등: 270도
+     
+     sin(9°)=0.1564 cos(9°)=0.9877
+     x1=40*0.1564≈6.3px, y1=-40*0.9877≈-39.5px → (6px,-40px)
+
+     sin(45°)=0.707 cos(45°)=0.707
+     x2=40*0.707≈28.3px, y2=-40*0.707≈-28.3px → (28px,-28px)
+
+     sin(126°)=0.8090 cos(126°)=-0.5878
+     x3=40*0.8090≈32.36px, y3=-40*(-0.5878)=+23.5px → (32px,24px)
+
+     sin(270°)=-1 cos(270°)=0
+     x4=40*(-1)=-40px, y4=0px → (-40px,0)
+  */
   .label1 {
-    transform: translate(12.5px, -79px);
+    transform: translate(6px, -40px);
   }
   .label2 {
-    transform: translate(57px, -57px);
+    transform: translate(28px, -28px);
   }
   .label3 {
-    transform: translate(65px, 47px);
+    transform: translate(32px, 24px);
   }
   .label4 {
-    transform: translate(-80px, 0px);
+    transform: translate(-40px, 0px);
   }
 
   #pointer {
@@ -134,10 +154,11 @@
   <div id="pointer"></div>
   <div id="wheel">
     <div class="label-container">
-      <div class="label label1">100권 시술권</div>
-      <div class="label label2">50만원 시술권</div>
-      <div class="label label3">1회 시술권</div>
-      <div class="label label4">최고급마스크팩</div>
+      <!-- 두 줄로 나눠서 표시 -->
+      <div class="label label1">100권<br>시술권</div>
+      <div class="label label2">50만원<br>시술권</div>
+      <div class="label label3">1회<br>시술권</div>
+      <div class="label label4">최고급<br>마스크팩</div>
     </div>
   </div>
 </div>
