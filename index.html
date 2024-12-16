@@ -1,225 +1,152 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>윤석열 대통령 탄핵 국민투표</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            flex-direction: column;
-        }
-
-        .container {
-            background: #fff;
-            padding: 1em;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
-            margin-bottom: 2em;
-        }
-
-        h1 {
-            font-size: 1.4em;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 1em;
-        }
-
-        .button-container {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 1em;
-        }
-
-        .vote-btn {
-            flex: 1;
-            margin: 0 0.5em;
-            font-size: 1em;
-            padding: 0.7em 1em;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            color: #fff;
-            font-weight: 600;
-            box-sizing: border-box;
-        }
-
-        .agree-btn {
-            background-color: #007aff;
-        }
-
-        .disagree-btn {
-            background-color: #ff3b30;
-        }
-
-        .count-container {
-            margin-top: 1em;
-        }
-
-        .count-label {
-            display: inline-block;
-            margin-right: 10px;
-            font-size: 1em;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .count-value {
-            color: #333;
-            font-weight: 700;
-            font-size: 1.2em;
-        }
-
-        #voteChart {
-            margin: 20px auto;
-        }
-
-        .info-container {
-            margin-top: 1em;
-            text-align: left;
-        }
-
-        .info-container h2 {
-            font-size: 1.2em;
-            margin-bottom: 0.5em;
-        }
-
-        .info-container p {
-            font-size: 0.9em;
-            color: #555;
-            line-height: 1.4;
-        }
-
-        .timer {
-            font-size: 1em;
-            color: #555;
-            margin-top: 10px;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>룰렛 이벤트</title>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    background: #f9f9f9;
+    padding: 20px;
+  }
+  #roulette-container {
+    margin: 50px auto;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #result {
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+  }
+  #coupon {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #0044cc;
+    word-break: break-all;
+  }
+</style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>윤석열 대통령 탄핵 국민투표</h1>
-        <div class="button-container">
-            <button class="vote-btn agree-btn" id="agreeBtn">찬성</button>
-            <button class="vote-btn disagree-btn" id="disagreeBtn">반대</button>
-        </div>
-        <div class="count-container">
-            <span class="count-label">찬성:</span>
-            <span class="count-value" id="agreeCount">Loading...</span>
-            <br />
-            <span class="count-label">반대:</span>
-            <span class="count-value" id="disagreeCount">Loading...</span>
-        </div>
-        <canvas id="voteChart" width="400" height="200"></canvas>
-        <p class="timer" id="timer">투표 종료까지 남은 시간: 계산 중...</p>
-    </div>
-    <div class="info-container container">
-        <h2>투표 정보</h2>
-        <p>본 투표는 윤석열 대통령 탄핵에 대한 국민 의견을 수렴하기 위해 진행됩니다. 모든 투표 데이터는 Firebase Firestore를 통해 실시간으로 집계되며, 데이터는 익명으로 관리됩니다. 투표 결과는 투표 종료 후 공개됩니다.</p>
-    </div>
+<h1>룰렛 이벤트</h1>
+<p>1등: 100권 시술권, 2등: 50만원 시술권, 3등: 1회 시술권, 4등: 최고급마스크팩</p>
+<div id="roulette-container">
+  <button id="spinBtn">룰렛 돌리기</button>
+</div>
+<div id="result"></div>
+<div id="coupon"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCe86NkQI1UaPK0pr0XqpvbBUBybTQkOQ0",
-            authDomain: "count-3ce26.firebaseapp.com",
-            projectId: "count-3ce26",
-            storageBucket: "count-3ce26.appspot.com",
-            messagingSenderId: "60996349215",
-            appId: "1:60996349215:web:395dc0692334342670142a",
-            measurementId: "G-2QFCDW8HNW"
-        };
+<script>
+  // Firebase 초기화
+  const firebaseConfig = {
+    apiKey: "AIzaSyCe86NkQI1UaPK0pr0XqpvbBUBybTQkOQ0",
+    authDomain: "count-3ce26.firebaseapp.com",
+    projectId: "count-3ce26",
+    storageBucket: "count-3ce26.appspot.com",
+    messagingSenderId: "60996349215",
+    appId: "1:60996349215:web:395dc0692334342670142a",
+    measurementId: "G-2QFCDW8HNW"
+  };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const pollRef = doc(db, "votes", "impeachmentPoll");
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-        const agreeCountElem = document.getElementById("agreeCount");
-        const disagreeCountElem = document.getElementById("disagreeCount");
-        const agreeBtn = document.getElementById("agreeBtn");
-        const disagreeBtn = document.getElementById("disagreeBtn");
-        const timerElem = document.getElementById("timer");
+  // 사용자 식별을 위한 임시 userId (실 서비스에서는 로그인 기능 사용 권장)
+  let userId = localStorage.getItem('userId');
+  if (!userId) {
+    userId = 'user_' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('userId', userId);
+  }
 
-        const ctx = document.getElementById("voteChart").getContext("2d");
-        const voteChart = new Chart(ctx, {
-            type: "pie",
-            data: {
-                labels: ["찬성", "반대"],
-                datasets: [{
-                    data: [0, 0],
-                    backgroundColor: ["#007aff", "#ff3b30"]
-                }]
-            }
-        });
+  // 하루 1회 참여 제한을 위해 Firestore에 기록하는 함수
+  async function hasPlayedToday() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const dayKey = `${yyyy}-${mm}-${dd}`;
 
-        function updateChart(data) {
-            voteChart.data.datasets[0].data = [data.agree, data.disagree];
-            voteChart.update();
-        }
+    const docRef = db.collection('roulette').doc(userId);
+    const docSnap = await docRef.get();
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      if (data.lastPlay === dayKey) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-        async function loadCounts() {
-            const docSnap = await getDoc(pollRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                agreeCountElem.textContent = data.agree;
-                disagreeCountElem.textContent = data.disagree;
-                updateChart(data);
-            }
-        }
+  async function recordPlay(resultPrize, couponCode) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const dayKey = `${yyyy}-${mm}-${dd}`;
 
-        async function updateVote(field) {
-            await runTransaction(db, async (transaction) => {
-                const docSnap = await transaction.get(pollRef);
-                const data = docSnap.exists() ? docSnap.data() : { agree: 0, disagree: 0 };
-                data[field]++;
-                transaction.update(pollRef, data);
-                loadCounts();
-            });
-        }
+    await db.collection('roulette').doc(userId).set({
+      lastPlay: dayKey,
+      prize: resultPrize,
+      coupon: couponCode
+    }, { merge: true });
+  }
 
-        agreeBtn.addEventListener("click", () => updateVote("agree"));
-        disagreeBtn.addEventListener("click", () => updateVote("disagree"));
+  function getRandomPrize() {
+    // 1등: 100권 시술권
+    // 2등: 50만원 시술권
+    // 3등: 1회 시술권
+    // 4등: 최고급마스크팩
+    // 예: 1등: 5% 확률, 2등: 10% 확률, 3등: 30% 확률, 4등: 55% 확률 식으로 가중치 가능
+    // 여기서는 단순히 4등분
+    const random = Math.random();
+    if (random < 0.05) {
+      return "1등 (100권 시술권)";
+    } else if (random < 0.15) {
+      return "2등 (50만원 시술권)";
+    } else if (random < 0.45) {
+      return "3등 (1회 시술권)";
+    } else {
+      return "4등 (최고급마스크팩)";
+    }
+  }
 
-        function startTimer() {
-            const endTime = new Date("2024-12-31T23:59:59");
-            const interval = setInterval(() => {
-                const now = new Date();
-                const remaining = endTime - now;
-                if (remaining <= 0) {
-                    clearInterval(interval);
-                    agreeBtn.disabled = true;
-                    disagreeBtn.disabled = true;
-                    timerElem.textContent = "투표가 종료되었습니다.";
-                } else {
-                    const hours = Math.floor(remaining / (1000 * 60 * 60));
-                    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-                    timerElem.textContent = `투표 종료까지 남은 시간: ${hours}시간 ${minutes}분 ${seconds}초`;
-                }
-            }, 1000);
-        }
+  function generateCouponCode() {
+    return 'COUPON-' + Math.random().toString(36).substring(2, 12).toUpperCase();
+  }
 
-        window.onload = () => {
-            loadCounts();
-            startTimer();
-        };
-    </script>
+  document.getElementById('spinBtn').addEventListener('click', async () => {
+    const resultDiv = document.getElementById('result');
+    const couponDiv = document.getElementById('coupon');
+    resultDiv.textContent = '';
+    couponDiv.textContent = '';
+
+    // 하루 1회 참여여부 확인
+    const playedToday = await hasPlayedToday();
+    if (playedToday) {
+      resultDiv.textContent = '오늘은 이미 참여하셨습니다. 내일 다시 참여해주세요!';
+      return;
+    }
+
+    // 룰렛(난수) 돌리기
+    const prize = getRandomPrize();
+    const couponCode = generateCouponCode();
+
+    // Firestore에 기록
+    await recordPlay(prize, couponCode);
+
+    resultDiv.textContent = `당첨! 축하합니다. 당신의 당첨 상품: ${prize}`;
+    couponDiv.textContent = `당첨권 코드: ${couponCode}\n해당 코드를 샵에 방문하여 제시해주세요.`;
+  });
+</script>
 </body>
-
 </html>
