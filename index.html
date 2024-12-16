@@ -22,8 +22,6 @@
     position: relative;
     width: 300px;
     height: 300px;
-    max-width: 90vw;
-    max-height: 90vw;
   }
 
   #wheel {
@@ -48,47 +46,22 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    transform: translate(-50%,-50%);
     width: 0; height: 0;
+    transform: translate(-50%, -50%);
   }
 
-  /* 라벨을 각 구역의 중심 각도 방향으로 회전시킨 뒤,
-     그 방향으로 조금 떨어진 위치에 배치.
-     텍스트가 기울어질 수 있으나, 각 구역 안에 명확히 들어감 */
   .label {
     position: absolute;
-    width: 60px;
-    text-align: center;
-    font-size: 0.8em;
+    width: auto;
+    white-space: nowrap;
+    font-size: 0.9em;
     font-weight: bold;
     color: #000;
     background: rgba(255,255,255,0.9);
     border-radius: 3px;
-    padding: 2px;
+    padding: 3px 5px;
     box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-    line-height: 1.1em;
-  }
-
-  /* 각 구역 중앙각도:
-     1등: 9°
-     2등: 45°
-     3등: 126°
-     4등: 270°
-
-     각도별로 회전 후 translate로 외곽 방향으로 배치
-     (라벨을 구역 폭 안에 들어가도록 반지름 50px 정도로)
-   */
-  .label1 {
-    transform: rotate(9deg) translate(50px);
-  }
-  .label2 {
-    transform: rotate(45deg) translate(50px);
-  }
-  .label3 {
-    transform: rotate(126deg) translate(50px);
-  }
-  .label4 {
-    transform: rotate(270deg) translate(50px);
+    transform: translate(-50%, -50%);
   }
 
   #pointer {
@@ -144,12 +117,7 @@
 <div id="roulette-container">
   <div id="pointer"></div>
   <div id="wheel">
-    <div class="label-container">
-      <div class="label label1">100권<br>시술권</div>
-      <div class="label label2">50만원<br>시술권</div>
-      <div class="label label3">1회<br>시술권</div>
-      <div class="label label4">최고급<br>마스크팩</div>
-    </div>
+    <div class="label-container" id="labels"></div>
   </div>
 </div>
 
@@ -162,6 +130,44 @@
   const resultDiv = document.getElementById('result');
   const spinBtn = document.getElementById('spinBtn');
   const infoDiv = document.getElementById('info');
+
+  // 각 상품 구역의 중앙 각도 (도 단위)
+  // 1등: 0~18도 중앙 약 9도
+  // 2등: 18~72도 중앙 약 45도
+  // 3등: 72~180도 중앙 약 126도
+  // 4등: 180~360도 중앙 약 270도
+  const labelData = [
+    { angle: 9,   text: '100권',     color: '#ff6666' },
+    { angle: 45,  text: '50만원',    color: '#66b3ff' },
+    { angle: 126, text: '1회',       color: '#66ff66' },
+    { angle: 270, text: '마스크팩',  color: '#ffc266' }
+  ];
+
+  const labelsContainer = document.getElementById('labels');
+  
+  // 반지름(라벨 배치 위치)
+  const radius = 110;
+  
+  // 각도(도 단위)를 라디안으로
+  function degToRad(deg) {
+    return deg * Math.PI / 180;
+  }
+
+  // 라벨 생성
+  labelData.forEach(ld => {
+    const rad = degToRad(ld.angle);
+    const x = radius * Math.sin(rad);
+    const y = -radius * Math.cos(rad);
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = ld.text;
+    // 수평 유지, 라벨 자체는 회전하지 않음
+    // 위치만 x,y로 조정
+    label.style.left = x + 'px';
+    label.style.top = y + 'px';
+    labelsContainer.appendChild(label);
+  });
 
   let isSpinning = false;
 
@@ -195,6 +201,7 @@
     isSpinning = true;
     resultDiv.textContent = '';
 
+    // 확률에 따른 당첨
     const r = Math.random();
     let prize, angleRangeStart, angleRangeEnd;
     if (r < 0.05) {
