@@ -15,7 +15,6 @@
   h1 {
     font-size: 2em;
     margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
   }
 
   #roulette-container {
@@ -36,11 +35,12 @@
     transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
     box-sizing: border-box;
     overflow: hidden;
+    /* 확률별 구역 배경 */
     background: conic-gradient(
-      #ff6666 0deg 18deg,        /* 1등 (5%) */
-      #66b3ff 18deg 72deg,       /* 2등 (15%) */
-      #66ff66 72deg 180deg,      /* 3등 (30%) */
-      #ffc266 180deg 360deg      /* 4등 (50%) */
+      #ff6666 0deg 18deg,        /* 1등(5%) */
+      #66b3ff 18deg 72deg,       /* 2등(15%) */
+      #66ff66 72deg 180deg,      /* 3등(30%) */
+      #ffc266 180deg 360deg      /* 4등(50%) */
     );
     box-shadow: 0 0 20px rgba(0,0,0,0.1), inset 0 0 30px rgba(255,255,255,0.3);
   }
@@ -55,7 +55,7 @@
 
   .label {
     position: absolute;
-    width: 80px; /* 폭 줄이기 */
+    width: 80px;
     text-align: center;
     font-size: 0.9em;
     font-weight: bold;
@@ -66,18 +66,18 @@
     box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
   }
 
-  /* 각 구역 중앙 각도에 맞춘 레이블 위치 (translate값을 80px로 줄임) */
+  /* 정확한 각도로 배치한 레이블 - 수평 상태 유지 */
   .label1 {
-    transform: rotate(9deg) translate(80px) rotate(-9deg);
+    transform: translate(12.5px, -79px);
   }
   .label2 {
-    transform: rotate(45deg) translate(80px) rotate(-45deg);
+    transform: translate(57px, -57px);
   }
   .label3 {
-    transform: rotate(126deg) translate(80px) rotate(-126deg);
+    transform: translate(65px, 47px);
   }
   .label4 {
-    transform: rotate(270deg) translate(80px) rotate(-270deg);
+    transform: translate(-80px, 0px);
   }
 
   #pointer {
@@ -184,7 +184,6 @@
     isSpinning = true;
     resultDiv.textContent = '';
 
-    // 확률에 따른 당첨 결정 (각도범위와 일치)
     const r = Math.random();
     let prize, angleRangeStart, angleRangeEnd;
     if (r < 0.05) {
