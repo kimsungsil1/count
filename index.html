@@ -36,12 +36,11 @@
     transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
     box-sizing: border-box;
     overflow: hidden;
-    /* 확률별 구간 배경 */
     background: conic-gradient(
-      #ff6666 0deg 18deg,        /* 1등(5%) */
-      #66b3ff 18deg 72deg,       /* 2등(15%) */
-      #66ff66 72deg 180deg,      /* 3등(30%) */
-      #ffc266 180deg 360deg      /* 4등(50%) */
+      #ff6666 0deg 18deg,        /* 1등 (5%) */
+      #66b3ff 18deg 72deg,       /* 2등 (15%) */
+      #66ff66 72deg 180deg,      /* 3등 (30%) */
+      #ffc266 180deg 360deg      /* 4등 (50%) */
     );
     box-shadow: 0 0 20px rgba(0,0,0,0.1), inset 0 0 30px rgba(255,255,255,0.3);
   }
@@ -56,7 +55,7 @@
 
   .label {
     position: absolute;
-    width: 100px;
+    width: 80px; /* 폭 줄이기 */
     text-align: center;
     font-size: 0.9em;
     font-weight: bold;
@@ -67,17 +66,18 @@
     box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
   }
 
+  /* 각 구역 중앙 각도에 맞춘 레이블 위치 (translate값을 80px로 줄임) */
   .label1 {
-    transform: rotate(9deg) translate(100px) rotate(-9deg);
+    transform: rotate(9deg) translate(80px) rotate(-9deg);
   }
   .label2 {
-    transform: rotate(45deg) translate(100px) rotate(-45deg);
+    transform: rotate(45deg) translate(80px) rotate(-45deg);
   }
   .label3 {
-    transform: rotate(126deg) translate(100px) rotate(-126deg);
+    transform: rotate(126deg) translate(80px) rotate(-126deg);
   }
   .label4 {
-    transform: rotate(270deg) translate(100px) rotate(-270deg);
+    transform: rotate(270deg) translate(80px) rotate(-270deg);
   }
 
   #pointer {
@@ -154,7 +154,6 @@
 
   let isSpinning = false;
 
-  // 하루 1회 제한(데모용)
   const STORAGE_KEY = 'lastPlayDate';
   const today = new Date().toLocaleDateString();
   function canPlayToday() {
@@ -185,22 +184,21 @@
     isSpinning = true;
     resultDiv.textContent = '';
 
-    // 확률에 따른 당첨 결정
-    // 1등: 5%, 2등: 15%, 3등: 30%, 4등: 50%
+    // 확률에 따른 당첨 결정 (각도범위와 일치)
     const r = Math.random();
     let prize, angleRangeStart, angleRangeEnd;
     if (r < 0.05) {
       prize = "1등 (100권 시술권)";
-      angleRangeStart = 0; angleRangeEnd = 18;   // 5%
+      angleRangeStart = 0; angleRangeEnd = 18;   
     } else if (r < 0.20) {
       prize = "2등 (50만원 시술권)";
-      angleRangeStart = 18; angleRangeEnd = 72;  // 15%
+      angleRangeStart = 18; angleRangeEnd = 72;  
     } else if (r < 0.50) {
       prize = "3등 (1회 시술권)";
-      angleRangeStart = 72; angleRangeEnd = 180; // 30%
+      angleRangeStart = 72; angleRangeEnd = 180; 
     } else {
       prize = "4등 (최고급마스크팩)";
-      angleRangeStart = 180; angleRangeEnd = 360; // 50%
+      angleRangeStart = 180; angleRangeEnd = 360;
     }
 
     const segmentAngle = angleRangeStart + Math.random()*(angleRangeEnd - angleRangeStart);
