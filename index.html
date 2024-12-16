@@ -46,21 +46,21 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 0; height: 0;
+    width: 0; 
+    height: 0;
     transform: translate(-50%, -50%);
   }
 
   .label {
     position: absolute;
-    width: auto;
-    white-space: nowrap;
     font-size: 0.9em;
     font-weight: bold;
     color: #000;
     background: rgba(255,255,255,0.9);
     border-radius: 3px;
-    padding: 3px 5px;
+    padding: 2px 5px;
     box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    white-space: nowrap;
     transform: translate(-50%, -50%);
   }
 
@@ -130,30 +130,24 @@
   const resultDiv = document.getElementById('result');
   const spinBtn = document.getElementById('spinBtn');
   const infoDiv = document.getElementById('info');
+  const labelsContainer = document.getElementById('labels');
 
-  // 각 상품 구역의 중앙 각도 (도 단위)
-  // 1등: 0~18도 중앙 약 9도
-  // 2등: 18~72도 중앙 약 45도
-  // 3등: 72~180도 중앙 약 126도
-  // 4등: 180~360도 중앙 약 270도
+  // 각 구역 중앙각도 (도 단위)
+  // 1등: 9도, 2등: 45도, 3등: 126도, 4등: 270도
   const labelData = [
-    { angle: 9,   text: '100권',     color: '#ff6666' },
-    { angle: 45,  text: '50만원',    color: '#66b3ff' },
-    { angle: 126, text: '1회',       color: '#66ff66' },
-    { angle: 270, text: '마스크팩',  color: '#ffc266' }
+    { angle: 9,   text: '1등' },
+    { angle: 45,  text: '2등' },
+    { angle: 126, text: '3등' },
+    { angle: 270, text: '4등' }
   ];
 
-  const labelsContainer = document.getElementById('labels');
-  
-  // 반지름(라벨 배치 위치)
-  const radius = 110;
-  
-  // 각도(도 단위)를 라디안으로
+  // 반지름 설정(라벨 배치 위치)
+  const radius = 100;
+
   function degToRad(deg) {
     return deg * Math.PI / 180;
   }
 
-  // 라벨 생성
   labelData.forEach(ld => {
     const rad = degToRad(ld.angle);
     const x = radius * Math.sin(rad);
@@ -162,8 +156,6 @@
     const label = document.createElement('div');
     label.className = 'label';
     label.textContent = ld.text;
-    // 수평 유지, 라벨 자체는 회전하지 않음
-    // 위치만 x,y로 조정
     label.style.left = x + 'px';
     label.style.top = y + 'px';
     labelsContainer.appendChild(label);
