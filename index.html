@@ -4,24 +4,35 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>룰렛 이벤트</title>
+<!-- 구글 폰트 사용 -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+
 <style>
   body {
-    font-family: sans-serif;
+    font-family: 'Noto Sans KR', sans-serif;
     text-align: center;
-    background: #ffffff;
-    padding: 20px;
+    background: linear-gradient(to bottom, #fefefe, #f2f2f2);
+    padding: 30px;
     color: #333;
   }
+
   h1 {
-    font-size: 2em;
+    font-size: 2.2em;
     margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  p {
+    font-size: 1.1em;
+    margin-bottom: 20px;
+    color: #444;
   }
 
   #roulette-container {
     margin: 20px auto;
     position: relative;
-    width: 300px;
-    height: 300px;
+    width: 320px;
+    height: 320px;
   }
 
   #wheel {
@@ -29,19 +40,20 @@
     height: 100%;
     border-radius: 50%;
     position: relative;
-    border: 5px solid #333;
+    border: 8px solid #333;
     transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
     box-sizing: border-box;
     overflow: hidden;
     background: conic-gradient(
-      #ff6666 0deg 18deg,        /* 1등(5%) */
-      #66b3ff 18deg 72deg,       /* 2등(15%) */
-      #66ff66 72deg 180deg,      /* 3등(30%) */
-      #ffc266 180deg 360deg      /* 4등(50%) */
+      #ff6666 0deg 18deg,        /* 1등(5%)   */
+      #66b3ff 18deg 72deg,       /* 2등(15%)  */
+      #66ff66 72deg 180deg,      /* 3등(30%)  */
+      #ffc266 180deg 360deg      /* 4등(50%)  */
     );
-    box-shadow: 0 0 20px rgba(0,0,0,0.1), inset 0 0 30px rgba(255,255,255,0.3);
+    box-shadow: 0 0 30px rgba(0,0,0,0.1), inset 0 0 30px rgba(255,255,255,0.3);
   }
 
+  /* 라벨 컨테이너 */
   .label-container {
     position: absolute;
     left: 50%;
@@ -51,62 +63,73 @@
     transform: translate(-50%, -50%);
   }
 
+  /* 각 라벨 스타일 */
   .label {
     position: absolute;
-    font-size: 0.9em;
-    font-weight: bold;
-    color: #000;
-    background: rgba(255,255,255,0.9);
-    border-radius: 3px;
-    padding: 2px 5px;
-    box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    font-size: 1.0em;
+    font-weight: 700;
+    color: #222;
+    background: rgba(255,255,255,0.95);
+    border-radius: 5px;
+    padding: 4px 8px;
+    box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
     white-space: nowrap;
     transform: translate(-50%, -50%);
   }
 
+  /* 포인터 디자인 개선 */
   #pointer {
     position: absolute;
-    top: 0px;
+    top: -15px;
     left: 50%;
     transform: translateX(-50%);
     width: 0; 
     height: 0; 
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-top: 20px solid #333; 
+    border-left: 17px solid transparent;
+    border-right: 17px solid transparent;
+    border-bottom: 25px solid #e74c3c; 
     z-index: 2;
+    filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.3));
   }
 
   #spinBtn {
-    padding: 10px 20px;
+    padding: 12px 30px;
     font-size: 16px;
     cursor: pointer;
-    margin-top: 20px;
-    background: #333;
+    margin-top: 30px;
+    background: linear-gradient(to right, #333, #555);
     color: #fff;
     border: none;
-    border-radius: 5px;
-    transition: background 0.3s;
+    border-radius: 8px;
+    transition: background 0.3s, transform 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
   }
   #spinBtn:hover {
-    background: #555;
+    background: linear-gradient(to right, #555, #777);
+    transform: translateY(-2px);
+  }
+  #spinBtn:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+    box-shadow: none;
   }
 
   #result {
-    margin-top: 20px;
-    font-size: 1.2em;
+    margin-top: 30px;
+    font-size: 1.3em;
     font-weight: bold;
     color: #333;
-    background: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.9);
     display: inline-block;
-    padding: 10px;
-    border-radius: 5px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
   }
 
   #info {
-    margin-top: 10px;
-    font-size: 0.9em;
-    color: #333;
+    margin-top: 15px;
+    font-size: 1em;
+    color: #555;
   }
 </style>
 </head>
@@ -132,17 +155,17 @@
   const infoDiv = document.getElementById('info');
   const labelsContainer = document.getElementById('labels');
 
-  // 각 구역 중앙각도 (도 단위)
-  // 1등: 9도, 2등: 45도, 3등: 126도, 4등: 270도
+  // 라벨 정보: 해당 섹션의 중앙 각도와 표시 텍스트
+  // 1등: 중심각 9도(0~18도), 2등: 중심각45도(18~72도), 3등:126도(72~180도), 4등:270도(180~360도)
   const labelData = [
-    { angle: 9,   text: '1등' },
-    { angle: 45,  text: '2등' },
-    { angle: 126, text: '3등' },
-    { angle: 270, text: '4등' }
+    { angle: 9,   text: '1등 (100권 시술권)' },
+    { angle: 45,  text: '2등 (50만원 시술권)' },
+    { angle: 126, text: '3등 (1회 시술권)' },
+    { angle: 270, text: '4등 (고급 마스크팩)' }
   ];
 
-  // 반지름 설정(라벨 배치 위치)
-  const radius = 100;
+  // 라벨 배치 반지름
+  const radius = 110;
 
   function degToRad(deg) {
     return deg * Math.PI / 180;
@@ -177,11 +200,9 @@
     if (!canPlayToday()) {
       infoDiv.textContent = '오늘은 이미 참여하셨습니다. 내일 다시 도전하세요!';
       spinBtn.disabled = true;
-      spinBtn.style.background = '#aaa';
     } else {
       infoDiv.textContent = '오늘 참여 가능합니다.';
       spinBtn.disabled = false;
-      spinBtn.style.background = '#333';
     }
   }
   updateInfo();
@@ -193,7 +214,11 @@
     isSpinning = true;
     resultDiv.textContent = '';
 
-    // 확률에 따른 당첨
+    // 확률에 따른 당첨 (r: 0~1)
+    // 1등: 5% (0~0.05)
+    // 2등: 15% (0.05~0.20)
+    // 3등: 30% (0.20~0.50)
+    // 4등: 50% (0.50~1.00)
     const r = Math.random();
     let prize, angleRangeStart, angleRangeEnd;
     if (r < 0.05) {
@@ -206,17 +231,19 @@
       prize = "3등 (1회 시술권)";
       angleRangeStart = 72; angleRangeEnd = 180; 
     } else {
-      prize = "4등 (최고급마스크팩)";
+      prize = "4등 (고급 마스크팩)";
       angleRangeStart = 180; angleRangeEnd = 360;
     }
 
+    // 해당 구역 내 임의의 각도 선택
     const segmentAngle = angleRangeStart + Math.random()*(angleRangeEnd - angleRangeStart);
-    const extraSpins = 5;
+    const extraSpins = 5; // 추가 회전 수(여러 바퀴 돈 뒤 해당 각도로 멈추기)
     const targetAngle = (360 * extraSpins) + segmentAngle;
 
     wheel.style.transform = `rotate(${targetAngle}deg)`;
 
     wheel.addEventListener('transitionend', () => {
+      // 당첨 결과 출력
       resultDiv.textContent = `당첨! 축하합니다. 당신의 당첨 상품: ${prize}`;
       recordPlay();
       updateInfo();
