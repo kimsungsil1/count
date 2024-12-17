@@ -66,7 +66,7 @@
   /* 각 라벨 스타일 */
   .label {
     position: absolute;
-    font-size: 1.0em;
+    font-size: 1.2em;
     font-weight: 700;
     color: #222;
     background: rgba(255,255,255,0.95);
@@ -155,13 +155,13 @@
   const infoDiv = document.getElementById('info');
   const labelsContainer = document.getElementById('labels');
 
-  // 라벨 정보: 해당 섹션의 중앙 각도와 표시 텍스트
+  // 라벨 정보: 해당 섹션의 중앙 각도와 표시 텍스트(등수만)
   // 1등: 중심각 9도(0~18도), 2등: 중심각45도(18~72도), 3등:126도(72~180도), 4등:270도(180~360도)
   const labelData = [
-    { angle: 9,   text: '1등 (100권 시술권)' },
-    { angle: 45,  text: '2등 (50만원 시술권)' },
-    { angle: 126, text: '3등 (1회 시술권)' },
-    { angle: 270, text: '4등 (고급 마스크팩)' }
+    { angle: 9,   text: '1등' },
+    { angle: 45,  text: '2등' },
+    { angle: 126, text: '3등' },
+    { angle: 270, text: '4등' }
   ];
 
   // 라벨 배치 반지름
@@ -231,13 +231,13 @@
       prize = "3등 (1회 시술권)";
       angleRangeStart = 72; angleRangeEnd = 180; 
     } else {
-      prize = "4등 (고급 마스크팩)";
+      prize = "4등 (최고급마스크팩)";
       angleRangeStart = 180; angleRangeEnd = 360;
     }
 
     // 해당 구역 내 임의의 각도 선택
     const segmentAngle = angleRangeStart + Math.random()*(angleRangeEnd - angleRangeStart);
-    const extraSpins = 5; // 추가 회전 수(여러 바퀴 돈 뒤 해당 각도로 멈추기)
+    const extraSpins = 5; // 추가 회전 수
     const targetAngle = (360 * extraSpins) + segmentAngle;
 
     wheel.style.transform = `rotate(${targetAngle}deg)`;
